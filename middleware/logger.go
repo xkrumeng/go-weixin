@@ -82,7 +82,10 @@ func LoggerToFile() gin.HandlerFunc {
 		reqMethod := ctx.Request.Method
 
 		// 请求路由
-		reqUri := ctx.Request.RequestURI
+		reqURI := ctx.Request.RequestURI
+
+		// 请求带的头
+		header := ctx.Request.Header
 
 		// 状态码
 		statusCode := ctx.Writer.Status()
@@ -90,13 +93,16 @@ func LoggerToFile() gin.HandlerFunc {
 		// 请求IP
 		clientIP := ctx.ClientIP()
 
+		fmt.Printf("%+v", ctx.Request)
+
 		// 日志格式
 		logger.WithFields(logrus.Fields{
 			"status_code":  statusCode,
 			"latency_time": latencyTime,
 			"client_ip":    clientIP,
 			"req_method":   reqMethod,
-			"req_uri":      reqUri,
+			"req_uri":      reqURI,
+			"header":       header,
 		}).Info()
 	}
 }
