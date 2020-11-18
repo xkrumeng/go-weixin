@@ -2,17 +2,18 @@ package middleware
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
-	"os"
-	"path"
-	"time"
 )
 
-// 日志记录到文件
-func LoggerToFIle() gin.HandlerFunc {
+// LoggerToFile 日志记录到文件
+func LoggerToFile() gin.HandlerFunc {
 	// 日志文件目录
 	logFilePath := "logs"
 
@@ -37,16 +38,16 @@ func LoggerToFIle() gin.HandlerFunc {
 	// 设置 rotatelogs 日志分割
 	logWriter, _ := rotatelogs.New(
 		// 分割后的名称
-		fileName + ".%Y%m%d.log",
+		fileName+".%Y%m%d.log",
 
 		// 生成软链， 指向最新的日志文件
 		rotatelogs.WithLinkName(fileName),
 
 		// 设置最大的保存时间(7天)
-		rotatelogs.WithMaxAge(7 * 24 * time.Hour),
+		rotatelogs.WithMaxAge(7*24*time.Hour),
 
 		//设置日志切割时间间隔(1天）
-		rotatelogs.WithRotationTime(24 * time.Hour),
+		rotatelogs.WithRotationTime(24*time.Hour),
 	)
 
 	writeMap := lfshook.WriterMap{
@@ -59,7 +60,7 @@ func LoggerToFIle() gin.HandlerFunc {
 	}
 
 	lfHook := lfshook.NewHook(writeMap, &logrus.JSONFormatter{
-		TimestampFormat:"2006-01-02 15:04:05",
+		TimestampFormat: "2006-01-02 15:04:05",
 	})
 
 	logger.AddHook(lfHook)
@@ -91,11 +92,11 @@ func LoggerToFIle() gin.HandlerFunc {
 
 		// 日志格式
 		logger.WithFields(logrus.Fields{
-			"status_code"  : statusCode,
-			"latency_time" : latencyTime,
-			"client_ip"    : clientIP,
-			"req_method"   : reqMethod,
-			"req_uri"      : reqUri,
+			"status_code":  statusCode,
+			"latency_time": latencyTime,
+			"client_ip":    clientIP,
+			"req_method":   reqMethod,
+			"req_uri":      reqUri,
 		}).Info()
 	}
 }

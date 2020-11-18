@@ -1,20 +1,53 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"goweixin/middleware"
+	"context"
+	"fmt"
+	"goweixin/conf"
+	"goweixin/routers"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 )
 
-func main()  {
-	engine := gin.Default()
+func main() {
+	conf.LoadConfig()
+	r := routers.InitRouter()
 
-	engine.Use(middleware.LoggerToFIle())
+	server := &http.Server{
+		Addr:         conf.Server.HTTPPort,
+		Handler:      r,
+		ReadTimeout:  conf.Server.ReadTimeout * time.Second,
+		WriteTimeout: conf.Server.WriteTimeout * time.Second,
+	}
 
-	engine.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"data": 111,
-		})
-	})
-	engine.Run(":3000")
+	fmt.Println("|-----------------------------------|")
+	fmt.Println("|          go-weixin-api            |")
+	fmt.Println("|-----------------------------------|")
+	fmt.Println("|  Go Http Server Start Successful  |")
+	fmt.Println("|    Port" + conf.Server.HTTPPort + "     Pid:" + fmt.Sprintf("%d", os.Getpid()) + "        |")
+	fmt.Println("|-----------------------------------|")
+	fmt.Println("")
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTP server listen: %s\n", err)
+		}
+	}()
+
+	// 等待中断信号以优雅地关闭服务器（设置 5 秒的超时时间）
+	signalChan := make(chan os.Signal)
+	signal.Notify(signalChan, os.Interrupt)
+	sig := <-signalChan
+	log.Println("Get Signal:", sig)
+	log.Println("Shutdown Server ...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	log.Println("Server exiting")
 }
